@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dish List</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    .dish-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .dish-table th,
+    .dish-table td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .dish-table th {
+      background-color: #f2f2f2;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .buttons button {
+      padding: 5px 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .update-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .updateModal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border: 2px solid #ccc;
+    z-index: 1000;
+}
+
+
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    form input, form button {
+      padding: 10px;
+      margin: 5px;
+      width: calc(100% - 22px);
+    }
+
+    form button {
+      width: auto;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 500px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dish List</h1>
+    
+        <div id="dish-list">
+          <table class="dish-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Ingredients</th>
+                <th>Steps</th>
+                <th>Time</th>
+                <th>Origin</th>
+                <th>Spice</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dish-table-body">
+              <!-- Dish rows go here -->
+            </tbody>
+          </table>
+        </div>
+    
+        <h2>Add New Dish</h2>
+        <form id="add-dish-form">
+          <input type="text" id="name" placeholder="Dish Name" required />
+          <input type="text" id="ingredients" placeholder="Ingredients (comma separated)" required />
+          <input type="text" id="preparationSteps" placeholder="Preparation Steps (comma separated)" required />
+          <input type="number" id="cookingTime" placeholder="Cooking Time (in minutes)" required />
+          <input type="text" id="origin" placeholder="Origin" required />
+          <input type="text" id="spiceLevel" placeholder="Spice Level" required />
+          <button type="submit">Add Dish</button>
+        </form>
+      </div>
+    
+      <!-- Update Dish Modal -->
+<div id="updateModal" style="display:none;">
+    <form id="update-dish-form">
+      <input type="hidden" id="update-id" />
+  
+      <label>Name:</label>
+      <input type="text" id="update-name" required />
+  
+      <label>Ingredients (comma-separated):</label>
+      <input type="text" id="update-ingredients" required />
+  
+      <label>Preparation Steps (comma-separated):</label>
+      <input type="text" id="update-preparationSteps" required />
+  
+      <label>Cooking Time (minutes):</label>
+      <input type="number" id="update-cookingTime" required />
+  
+      <label>Origin:</label>
+      <input type="text" id="update-origin" required />
+  
+      <label>Spice Level:</label>
+      <input type="text" id="update-spiceLevel" required />
+  
+      <button type="submit">Update Dish</button>
+      <button type="button" class="close">Cancel</button>
+    </form>
+  </div>
+  
+    
+      <script>
+        let currentDishId = null;
+      
+        // Fetch and display dishes
+        function fetchAndDisplayDishes() {
+          fetch("http://localhost:3000/api/dishes")
+            .then(response => response.json())
+            .then(dishes => {
+              const tableBody = document.getElementById("dish-table-body");
+              tableBody.innerHTML = ""; // Clear previous rows
+      
+              dishes.forEach(dish => {
+                const row = document.createElement("tr");
+      
+                row.innerHTML = `
+                  <td>${dish.name}</td>
+                  <td>${dish.ingredients.join(", ")}</td>
+                  <td>${dish.preparationSteps.join(", ")}</td>
+                  <td>${dish.cookingTime} min</td>
+                  <td>${dish.origin}</td>
+                  <td>${dish.spiceLevel}</td>
+                  <td>
+                    <div class="buttons">
+                      <button class="update-btn" onclick="openUpdateModal('${dish._id}')">Update</button>
+                      <button class="delete-btn" onclick="deleteDish('${dish._id}')">Delete</button>
+                    </div>
+                  </td>
+                `;
+      
+                tableBody.appendChild(row);
+              });
+            })
+            .catch(error => console.error("Error fetching dishes:", error));
+        }
+      
+        // Initial load
+        fetchAndDisplayDishes();
+      
+        // Add new dish
+        document.getElementById("add-dish-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+      
+          const newDish = {
+            name: document.getElementById("name").value,
+            ingredients: document.getElementById("ingredients").value.split(","),
+            preparationSteps: document.getElementById("preparationSteps").value.split(","),
+            cookingTime: parseInt(document.getElementById("cookingTime").value),
+            origin: document.getElementById("origin").value,
+            spiceLevel: document.getElementById("spiceLevel").value
+          };
+      
+          fetch("http://localhost:3000/api/dishes", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(newDish)
+          })
+          .then(response => response.json())
+          .then(() => {
+            alert("New dish added!");
+            fetchAndDisplayDishes();
+            document.getElementById("add-dish-form").reset();
+          })
+          .catch(error => console.error("Error adding dish:", error));
+        });
+      
+        // Open update modal
+        function openUpdateModal(dishId) {
+        //fetch(`http://localhost:3000/api/dishes/${dishId}`)  // 
+      //  .then(response => response.json())
+       // .then(dish => {
+        currentDishId = dishId;
+
+       // document.getElementById("update-id").value = dish._id;
+       //  document.getElementById("update-name").value = dish.name;
+       // document.getElementById("update-ingredients").value = dish.ingredients.join(',');
+        // document.getElementById("update-preparationSteps").value = dish.preparationSteps.join(',');
+       // document.getElementById("update-cookingTime").value = dish.cookingTime;
+       // document.getElementById("update-origin").value = dish.origin;
+       // document.getElementById("update-spiceLevel").value = dish.spiceLevel;
+
+     
+        
+     // .catch(error => console.error("Error fetching dish details:", error));
+        document.getElementById("updateModal").style.display = "block";
+
+    }
+
+
+      
+        // Close modal
+        document.querySelector(".close").addEventListener("click", function () {
+          document.getElementById("updateModal").style.display = "none";
+        });
+      
+        // Update dish
+        document.getElementById("update-dish-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+      
+          // Log the currentDishId to verify it's set correctly
+          console.log("Current Dish ID:", currentDishId);  // This is where the log is added
+      
+          const updatedDish = {
+            name: document.getElementById("update-name").value,
+            ingredients: document.getElementById("update-ingredients").value.split(","),
+            preparationSteps: document.getElementById("update-preparationSteps").value.split(","),
+            cookingTime: parseInt(document.getElementById("update-cookingTime").value),
+            origin: document.getElementById("update-origin").value,
+            spiceLevel: document.getElementById("update-spiceLevel").value
+          };
+      
+          fetch(`http://localhost:3000/api/dishes/${currentDishId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updatedDish)
+          })
+          .then(response => response.json())
+          .then(() => {
+            alert("Dish updated successfully!");
+            document.getElementById("updateModal").style.display = "none";
+            fetchAndDisplayDishes();
+          })
+          .catch(error => console.error("Error updating dish:", error));
+        });
+      
+        // Delete dish
+        function deleteDish(dishId) {
+          const confirmDelete = confirm("Are you sure you want to delete this dish?");
+          if (confirmDelete) {
+            fetch(`http://localhost:3000/api/dishes/${dishId}`, {
+              method: "DELETE"
+            })
+            .then(response => response.json())
+            .then(() => {
+              alert("Dish deleted successfully!");
+              fetchAndDisplayDishes();
+            })
+            .catch(error => console.error("Error deleting dish:", error));
+          }
+        }
+      </script>
+    </body>
+    </html>
