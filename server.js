@@ -100,13 +100,13 @@ const insertSampleDishes = async () => {
         if (!existingDish) {
           // Only insert the dish if it doesn't already exist
           await Dish.create(dish);
-          console.log(`✅ ${dish.name} inserted into the database!`);
+          console.log(` ${dish.name} inserted into the database!`);
         } else {
-          console.log(`❌ ${dish.name} already exists in the database!`);
+          console.log(` ${dish.name} already exists in the database!`);
         }
       }
     } catch (error) {
-      console.error("❌ Error inserting sample dishes:", error);
+      console.error("Error inserting sample dishes:", error);
     }
 };
 
@@ -124,11 +124,11 @@ const deleteDuplicates = async () => {
       // Keep the first dish and remove the rest
       const [firstDishId, ...duplicateIds] = dishGroup.ids;
       await Dish.deleteMany({ _id: { $in: duplicateIds } }); // Delete the duplicates
-      console.log(`✅ Duplicates of "${dishGroup._id}" deleted. Kept one.`);
+      console.log(` Duplicates of "${dishGroup._id}" deleted. Kept one.`);
     }
 
   } catch (error) {
-    console.error("❌ Error deleting duplicates:", error);
+    console.error(" Error deleting duplicates:", error);
   }
 };
 
@@ -143,7 +143,7 @@ mongoose.connect(process.env.CONNECTION_URL)
 
     // Start the server once the DB is connected
     app.listen(process.env.PORT, () => {
-      console.log(`✅ Server running on port ${process.env.PORT}`);
+      console.log(` Server running on port ${process.env.PORT}`);
     });
   })
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+  .catch((err) => console.error("MongoDB connection error:", err));
